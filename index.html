@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Absensi Pembimbing Sholat Siswa - MI Daarussalaam</title>
+<style>
+  :root{
+    --bg:#f6f4ee;
+    --surface:#ffffff;
+    --ink:#182620;
+    --muted:#5c6b62;
+    --primary:#145c43;
+    --primary-dark:#0d3f2e;
+    --primary-soft:#e6efe9;
+    --gold:#a97a1f;
+    --gold-soft:#f6ecd8;
+    --border:#dfe3d9;
+    --danger:#b3261e;
+    --danger-soft:#fbe9e7;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4{font-family:Georgia,"Times New Roman",serif;margin:0 0 4px 0;font-weight:700;}
+  a{color:var(--primary-dark);}
+
+  /* ---------- header ---------- */
+  .app-header{
+    background:linear-gradient(120deg,var(--primary-dark),var(--primary));
+    color:#fdfaf2;
+    padding:22px 20px 16px;
+    position:relative;
+    overflow:hidden;
+  }
+  .app-header::after{
+    content:"";
+    position:absolute; left:0; right:0; bottom:0; height:6px;
+    background-image:repeating-linear-gradient(45deg,var(--gold) 0 8px, transparent 8px 16px);
+    opacity:.55;
+  }
+  .app-header .brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .app-header .brand-mark{
+    width:44px;height:44px;border-radius:50%;
+    background:rgba(255,255,255,.12);
+    display:flex;align-items:center;justify-content:center;
+    font-size:22px;flex-shrink:0;
+    border:1px solid rgba(255,255,255,.35);
+  }
+  .app-header h1{font-size:1.15rem;letter-spacing:.2px;color:#fff;}
+  .app-header .school{font-size:.82rem;color:var(--gold-soft);opacity:.9;}
+  .app-header .today-line{margin-top:10px;font-size:.85rem;color:#eef5f0;opacity:.9;}
+
+  /* ---------- nav ---------- */
+  nav.app-nav{
+    display:flex;gap:6px;padding:10px 12px;background:var(--surface);
+    border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20;
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+  }
+  nav.app-nav button{
+    border:1px solid transparent;background:transparent;color:var(--muted);
+    padding:8px 13px;border-radius:20px;cursor:pointer;font-size:.83rem;font-weight:600;
+    white-space:nowrap; flex-shrink:0;
+  }
+  nav.app-nav button.active{background:var(--primary-soft);color:var(--primary-dark);border-color:var(--primary);}
+  nav.app-nav button:hover{background:var(--primary-soft);}
+
+  main{max-width:980px;margin:0 auto;padding:16px 14px 60px;}
+  .page{display:none;}
+  .page.active{display:block;}
+
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px 16px;margin-bottom:14px;
+  }
+  .card h2{font-size:1.05rem;color:var(--primary-dark);}
+  .card h3{font-size:.95rem;color:var(--primary-dark);}
+  .muted{color:var(--muted);font-size:.85rem;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .row.between{justify-content:space-between;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media (max-width:640px){.grid-2{grid-template-columns:1fr;}}
+
+  label{font-size:.8rem;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;}
+  input[type=text],input[type=number],input[type=date],select,textarea{
+    width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;
+    font-size:.92rem;font-family:inherit;background:#fff;color:var(--ink);
+  }
+  textarea{resize:vertical;min-height:56px;}
+  .field{margin-bottom:12px;}
+
+  .btn{
+    display:inline-flex;align-items:center;gap:6px;justify-content:center;
+    border:1px solid var(--primary);background:var(--primary);color:#fff;
+    padding:9px 16px;border-radius:8px;font-size:.87rem;font-weight:600;cursor:pointer;
+  }
+  .btn:hover{background:var(--primary-dark);}
+  .btn-outline{background:transparent;color:var(--primary-dark);}
+  .btn-outline:hover{background:var(--primary-soft);}
+  .btn-gold{background:var(--gold);border-color:var(--gold);}
+  .btn-gold:hover{background:#8f6a1c;}
+  .btn-danger{background:var(--danger);border-color:var(--danger);}
+  .btn-danger:hover{background:#8f1f18;}
+  .btn-sm{padding:6px 11px;font-size:.78rem;}
+  .btn[disabled]{opacity:.5;cursor:not-allowed;}
+
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:700;}
+  .badge-success{background:#e2f3e7;color:#1c6b34;}
+  .badge-warning{background:var(--gold-soft);color:#8a5f10;}
+  .badge-danger{background:var(--danger-soft);color:var(--danger);}
+  .badge-muted{background:#eef0ec;color:var(--muted);}
+
+  .radio-group{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;}
+  .radio-opt{display:flex;align-items:center;gap:6px;font-size:.88rem;font-weight:500;cursor:pointer;}
+  .radio-opt input{width:16px;height:16px;}
+
+  .schedule-card{border-left:4px solid var(--gold);}
+  .schedule-card.zuhur{border-left-color:var(--primary);}
+
+  table{width:100%;border-collapse:collapse;font-size:.85rem;}
+  th,td{padding:8px 9px;border-bottom:1px solid var(--border);text-align:left;}
+  th{background:var(--primary-soft);color:var(--primary-dark);font-size:.78rem;text-transform:uppercase;letter-spacing:.3px;}
+  tfoot td{font-weight:700;background:#fbfaf6;}
+  .table-wrap{overflow-x:auto;}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  @media (max-width:700px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
+  .stat-box{background:var(--primary-soft);border-radius:8px;padding:12px;text-align:center;}
+  .stat-box .num{font-size:1.35rem;font-weight:800;color:var(--primary-dark);font-family:Georgia,serif;}
+  .stat-box .lbl{font-size:.72rem;color:var(--muted);margin-top:2px;}
+
+  .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+  .tabs button{
+    border:1px solid var(--border);background:#fff;color:var(--muted);
+    padding:7px 13px;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;
+  }
+  .tabs button.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+  .subpage{display:none;}
+  .subpage.active{display:block;}
+
+  .empty-note{
+    background:var(--gold-soft);border:1px dashed var(--gold);border-radius:8px;
+    padding:14px;color:#7a5510;font-size:.88rem;text-align:center;
+  }
+  .saved-summary{background:#f8faf7;border:1px solid var(--border);border-radius:8px;padding:12px;}
+  .saved-summary .kv{display:flex;justify-content:space-between;font-size:.86rem;padding:3px 0;}
+  .saved-summary .kv span:first-child{color:var(--muted);}
+
+  .guru-chip{
+    display:inline-flex;align-items:center;gap:8px;background:var(--primary-soft);
+    border-radius:20px;padding:6px 8px 6px 14px;font-size:.85rem;margin:4px 6px 4px 0;
+  }
+  .guru-chip button{
+    border:none;background:var(--danger);color:#fff;width:20px;height:20px;border-radius:50%;
+    cursor:pointer;font-size:.7rem;line-height:1;
+  }
+
+  .footer-note{text-align:center;color:var(--muted);font-size:.75rem;margin-top:24px;}
+
+  /* ---------- print ---------- */
+  #printArea{display:none;}
+  .letterhead{text-align:center;margin-bottom:14px;border-bottom:2px solid #000;padding-bottom:8px;}
+  .letterhead h2{margin:0;font-size:1.1rem;}
+  .letterhead p{margin:2px 0;font-size:.85rem;}
+  .sign-row{display:flex;justify-content:space-between;margin-top:50px;font-size:.85rem;}
+  .sign-row .sign-block{text-align:center;width:220px;}
+  .sign-block .line{margin-top:60px;border-top:1px solid #000;padding-top:4px;}
+
+  @media print{
+    body *{visibility:hidden;}
+    #printArea, #printArea *{visibility:visible;}
+    #printArea{display:block;position:absolute;top:0;left:0;width:100%;padding:10px 20px;}
+    #printArea table{width:100%;border-collapse:collapse;}
+    #printArea th,#printArea td{border:1px solid #000;padding:5px 7px;font-size:.8rem;}
+    #printArea th{background:#eee !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
+
+  input[type=file]{font-size:.8rem;}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <div class="brand-mark">🕌</div>
+    <div>
+      <h1>Absensi Pembimbing Sholat Siswa</h1>
+      <div class="school">MI Daarussalaam</div>
+    </div>
+  </div>
+  <div class="today-line" id="headerTodayLine"></div>
+</header>
+
+<nav class="app-nav" id="mainNav">
+  <button data-page="dashboard" class="active">Dashboard</button>
+  <button data-page="absensi">Absensi Hari Ini</button>
+  <button data-page="jadwal">Jadwal Pembimbing</button>
+  <button data-page="rekap">Rekap Bulanan</button>
+  <button data-page="guru">Data Guru</button>
+  <button data-page="backup">Backup &amp; Restore</button>
+</nav>
+
+<main>
+
+  <!-- ================= DASHBOARD ================= -->
+  <section class="page active" id="page-dashboard">
+    <div class="card" id="dashScheduleCard"></div>
+    <div class="card">
+      <h2>Statistik Bulan Ini</h2>
+      <div class="stat-grid" id="dashStats"></div>
+    </div>
+  </section>
+
+  <!-- ================= ABSENSI HARI INI ================= -->
+  <section class="page" id="page-absensi">
+    <div class="card">
+      <div class="row between">
+        <div>
+          <h2>Absensi Pembimbing Hari Ini</h2>
+          <p class="muted">Pilih tanggal untuk mengisi atau memeriksa absensi pembimbing sholat.</p>
+        </div>
+        <div style="min-width:170px;">
+          <label>Tanggal</label>
+          <input type="date" id="absensiTanggal">
+        </div>
+      </div>
+    </div>
+    <div id="absensiContent"></div>
+  </section>
+
+  <!-- ================= JADWAL PEMBIMBING ================= -->
+  <section class="page" id="page-jadwal">
+    <div class="card">
+      <h2>Jadwal Sholat Zuhur</h2>
+      <p class="muted">Berlaku Senin&ndash;Kamis.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Hari</th><th>Pembimbing Utama</th></tr></thead>
+          <tbody id="jadwalZuhurBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Jadwal Sholat Duha</h2>
+      <p class="muted">Berlaku Selasa&ndash;Jumat.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Hari</th><th>Pembimbing Utama</th></tr></thead>
+          <tbody id="jadwalDuhaBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= REKAP BULANAN ================= -->
+  <section class="page" id="page-rekap">
+    <div class="card">
+      <div class="row" style="margin-bottom:10px;">
+        <div>
+          <label>Bulan</label>
+          <select id="rekapBulan"></select>
+        </div>
+        <div>
+          <label>Tahun</label>
+          <select id="rekapTahun"></select>
+        </div>
+        <div id="rekapFilterWrap">
+          <label>Jenis Sholat</label>
+          <select id="rekapFilter">
+            <option value="Semua">Semua</option>
+            <option value="Duha">Sholat Duha</option>
+            <option value="Zuhur">Sholat Zuhur</option>
+          </select>
+        </div>
+      </div>
+      <div class="tabs">
+        <button data-tab="harian" class="active">Rekap Harian</button>
+        <button data-tab="perguru">Rekap Per Guru</button>
+        <button data-tab="honor">Rekap Honor</button>
+      </div>
+    </div>
+
+    <div class="subpage active" id="tab-harian">
+      <div class="card">
+        <div class="row between" style="margin-bottom:10px;">
+          <h2 style="margin:0;">Rekap Absensi Harian</h2>
+          <div class="row">
+            <button class="btn btn-outline btn-sm" id="btnCetakHarian">🖨️ Cetak Rekap</button>
+            <button class="btn btn-outline btn-sm" id="btnCsvHarian">⬇️ Export CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Tanggal</th><th>Hari</th><th>Sholat</th><th>Pembimbing Utama</th><th>Status</th><th>Perwakilan</th><th>Catatan</th></tr></thead>
+            <tbody id="rekapHarianBody"></tbody>
+          </table>
+        </div>
+        <div id="rekapHarianEmpty" class="empty-note" style="display:none;margin-top:10px;">Belum ada data absensi pada bulan ini.</div>
+      </div>
+    </div>
+
+    <div class="subpage" id="tab-perguru">
+      <div class="card">
+        <h2>Rekap Per Guru</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Guru</th><th>Jadwal Utama</th><th>Membimbing</th><th>Diwakili</th><th>Tidak Membimbing</th></tr></thead>
+            <tbody id="rekapGuruBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="subpage" id="tab-honor">
+      <div class="card">
+        <h2>Rekap Honor Pembimbing</h2>
+        <p class="muted">Honor dihitung otomatis dari jumlah sesi bimbingan yang benar-benar dilaksanakan (baik oleh pembimbing utama yang berstatus <strong>Membimbing</strong>, maupun oleh guru <strong>Perwakilan</strong> saat pembimbing utama diwakili).</p>
+        <div class="field" style="max-width:260px;">
+          <label>Honor per Sesi Bimbingan (Rp)</label>
+          <input type="number" id="honorRateInput" min="0" step="500">
+        </div>
+        <div class="row between" style="margin:6px 0 10px;">
+          <div></div>
+          <div class="row">
+            <button class="btn btn-gold btn-sm" id="btnCetakHonor">🖨️ Cetak / Download PDF Honor</button>
+            <button class="btn btn-outline btn-sm" id="btnCsvHonor">⬇️ Export CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Guru</th><th>Jumlah Sesi Membimbing</th><th>Honor / Sesi</th><th>Total Honor</th></tr></thead>
+            <tbody id="rekapHonorBody"></tbody>
+            <tfoot><tr><td colspan="3">Total Keseluruhan</td><td id="rekapHonorTotal">Rp 0</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= DATA GURU ================= -->
+  <section class="page" id="page-guru">
+    <div class="card">
+      <h2>Data Guru Laki-laki</h2>
+      <p class="muted">Daftar guru yang digunakan sebagai pembimbing utama maupun perwakilan. Menghapus nama tidak akan mengubah data absensi yang sudah tersimpan sebelumnya.</p>
+      <div id="guruList" style="margin:10px 0;"></div>
+      <div class="row" style="margin-top:8px;">
+        <input type="text" id="guruBaruInput" placeholder="Nama guru baru, contoh: Pak Fulan" style="max-width:260px;">
+        <button class="btn btn-sm" id="btnTambahGuru">+ Tambah Guru</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= BACKUP & RESTORE ================= -->
+  <section class="page" id="page-backup">
+    <div class="card">
+      <h2>Backup Data</h2>
+      <p class="muted">Unduh seluruh data absensi, data guru, dan pengaturan honor sebagai file cadangan (.json).</p>
+      <button class="btn" id="btnBackup">⬇️ Unduh Backup</button>
+    </div>
+    <div class="card">
+      <h2>Restore Data</h2>
+      <p class="muted">Pulihkan data dari file backup (.json). Data yang sedang tersimpan di perangkat ini akan digantikan oleh data dari file backup.</p>
+      <input type="file" id="restoreFile" accept="application/json">
+      <div style="margin-top:8px;">
+        <button class="btn btn-outline" id="btnRestore">Pulihkan Data</button>
+      </div>
+    </div>
+  </section>
+
+  <p class="footer-note">Data disimpan secara lokal di peramban perangkat ini (localStorage). Lakukan backup rutin agar data tidak hilang.</p>
+</main>
+
+<div id="printArea"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ================= KONSTANTA ================= */
+  var HARI_NAMES = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  var BULAN_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+  var JADWAL_ZUHUR = {Senin:'Pak Ence', Selasa:'Pak Iwan', Rabu:'Pak Ujang', Kamis:'Pak Deden'};
+  var JADWAL_DUHA  = {Selasa:'Pak Iwan', Rabu:'Pak Ujang', Kamis:'Pak Deden', Jumat:'Pak Udan'};
+
+  var DEFAULT_GURU = ['Pak Ence','Pak Iwan','Pak Ujang','Pak Deden','Pak Udan','Pak Ce','Pak Sobandi'];
+  var DEFAULT_HONOR_RATE = 10000;
+
+  var LS_KEY = {
+    guru: 'apsholat_guru_v1',
+    absensi: 'apsholat_absensi_v1',
+    honor: 'apsholat_honorRate_v1'
+  };
+
+  /* ================= STORAGE HELPERS ================= */
+  function loadJSON(key, fallback){
+    try{
+      var raw = localStorage.getItem(key);
+      if(!raw) return fallback;
+      return JSON.parse(raw);
+    }catch(e){ return fallback; }
+  }
+  function saveJSON(key, val){
+    localStorage.setItem(key, JSON.stringify(val));
+  }
+
+  var state = {
+    guru: loadJSON(LS_KEY.guru, DEFAULT_GURU.slice()),
+    absensi: loadJSON(LS_KEY.absensi, {}), // { 'YYYY-MM-DD': { Duha:{...}, Zuhur:{...} } }
+    honorRate: loadJSON(LS_KEY.honor, DEFAULT_HONOR_RATE)
+  };
+
+  function persistGuru(){ saveJSON(LS_KEY.guru, state.guru); }
+  function persistAbsensi(){ saveJSON(LS_KEY.absensi, state.absensi); }
+  function persistHonor(){ saveJSON(LS_KEY.honor, state.honorRate); }
+
+  /* ================= UTIL TANGGAL ================= */
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function toDateStr(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
+  function parseDateStr(s){
+    var parts = s.split('-').map(Number);
+    return new Date(parts[0], parts[1]-1, parts[2]);
+  }
+  function hariFromDateStr(s){ return HARI_NAMES[parseDateStr(s).getDay()]; }
+  function formatTanggalIndo(s){
+    var d = parseDateStr(s);
+    return d.getDate()+' '+BULAN_NAMES[d.getMonth()]+' '+d.getFullYear();
+  }
+  function formatRupiah(n){
+    n = Number(n)||0;
+    return 'Rp ' + n.toLocaleString('id-ID');
+  }
+  function todayStr(){ return toDateStr(new Date()); }
+
+  function getScheduleForDateStr(dateStr){
+    var hari = hariFromDateStr(dateStr);
+    return { hari: hari, duha: JADWAL_DUHA[hari]||null, zuhur: JADWAL_ZUHUR[hari]||null };
+  }
+
+  /* ================= NAVIGASI ================= */
+  var pages = ['dashboard','absensi','jadwal','rekap','guru','backup'];
+  function showPage(id){
+    pages.forEach(function(p){
+      document.getElementById('page-'+p).classList.toggle('active', p===id);
+    });
+    var btns = document.querySelectorAll('#mainNav button');
+    btns.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-page')===id); });
+    if(id==='dashboard') renderDashboard();
+    if(id==='absensi') renderAbsensiPage();
+    if(id==='jadwal') renderJadwalPage();
+    if(id==='rekap') renderRekapAll();
+    if(id==='guru') renderGuruPage();
+  }
+  document.getElementById('mainNav').addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-page]');
+    if(!btn) return;
+    showPage(btn.getAttribute('data-page'));
+  });
+
+  function renderHeaderToday(){
+    var d = new Date();
+    document.getElementById('headerTodayLine').textContent =
+      HARI_NAMES[d.getDay()].toUpperCase()+', '+d.getDate()+' '+BULAN_NAMES[d.getMonth()]+' '+d.getFullYear();
+  }
+
+  /* ================= DASHBOARD ================= */
+  function renderDashboard(){
+    var ds = todayStr();
+    var sch = getScheduleForDateStr(ds);
+    var html = '<h2>Jadwal Hari Ini &mdash; '+sch.hari.toUpperCase()+'</h2>';
+    html += '<p class="muted">'+formatTanggalIndo(ds)+'</p>';
+
+    if(!sch.duha && !sch.zuhur){
+      html += '<div class="empty-note">Tidak ada jadwal pembimbing sholat hari ini.</div>';
+    } else {
+      html += '<div class="grid-2" style="margin-top:10px;">';
+      if(sch.duha){
+        var recD = (state.absensi[ds]||{}).Duha;
+        html += '<div class="card schedule-card" style="margin-bottom:0;">'+
+          '<h3>🌤️ Sholat Duha</h3>'+
+          '<p style="margin:4px 0;">Pembimbing: <strong>'+sch.duha+'</strong></p>'+
+          statusBadge(recD)+
+          '</div>';
+      }
+      if(sch.zuhur){
+        var recZ = (state.absensi[ds]||{}).Zuhur;
+        html += '<div class="card schedule-card zuhur" style="margin-bottom:0;">'+
+          '<h3>🕌 Sholat Zuhur</h3>'+
+          '<p style="margin:4px 0;">Pembimbing: <strong>'+sch.zuhur+'</strong></p>'+
+          statusBadge(recZ)+
+          '</div>';
+      }
+      html += '</div>';
+    }
+    document.getElementById('dashScheduleCard').innerHTML = html;
+
+    // statistik bulan berjalan
+    var now = new Date();
+    var prefix = now.getFullYear()+'-'+pad2(now.getMonth()+1);
+    var total=0, membimbing=0, diwakili=0, tidak=0;
+    Object.keys(state.absensi).forEach(function(dateKey){
+      if(dateKey.indexOf(prefix)!==0) return;
+      ['Duha','Zuhur'].forEach(function(j){
+        var rec = state.absensi[dateKey][j];
+        if(!rec) return;
+        total++;
+        if(rec.status==='Membimbing') membimbing++;
+        else if(rec.status==='Diwakili') diwakili++;
+        else if(rec.status==='Tidak Membimbing') tidak++;
+      });
+    });
+    var statHtml =
+      statBox(total,'Total Kegiatan') +
+      statBox(membimbing,'Pembimbing Hadir') +
+      statBox(diwakili,'Diwakili') +
+      statBox(tidak,'Tidak Membimbing');
+    document.getElementById('dashStats').innerHTML = statHtml;
+  }
+  function statBox(num,label){
+    return '<div class="stat-box"><div class="num">'+num+'</div><div class="lbl">'+label+'</div></div>';
+  }
+  function statusBadge(rec){
+    if(!rec) return '<span class="badge badge-warning">Belum Diabsen</span>';
+    var cls = rec.status==='Membimbing' ? 'badge-success' : (rec.status==='Diwakili' ? 'badge-warning' : 'badge-danger');
+    var label = 'Sudah Diabsen &middot; '+rec.status;
+    if(rec.status==='Diwakili' && rec.perwakilan) label += ' ('+rec.perwakilan+')';
+    return '<span class="badge '+cls+'">'+label+'</span>';
+  }
+
+  /* ================= ABSENSI HARI INI ================= */
+  var absensiEditing = {}; // { 'Duha': true } untuk tanggal yang sedang dilihat
+
+  function renderAbsensiPage(){
+    var input = document.getElementById('absensiTanggal');
+    if(!input.value) input.value = todayStr();
+    absensiEditing = {};
+    renderAbsensiContent();
+  }
+  document.getElementById('absensiTanggal').addEventListener('change', function(){
+    absensiEditing = {};
+    renderAbsensiContent();
+  });
+
+  function renderAbsensiContent(){
+    var dateStr = document.getElementById('absensiTanggal').value || todayStr();
+    var sch = getScheduleForDateStr(dateStr);
+    var container = document.getElementById('absensiContent');
+
+    var html = '<div class="card"><h2 style="margin-bottom:2px;">'+sch.hari.toUpperCase()+', '+formatTanggalIndo(dateStr)+'</h2></div>';
+
+    if(!sch.duha && !sch.zuhur){
+      html += '<div class="card"><div class="empty-note">Tidak ada jadwal pembimbing sholat hari ini.</div></div>';
+      container.innerHTML = html;
+      return;
+    }
+
+    if(sch.duha) html += buildAbsensiCard(dateStr, 'Duha', sch.duha, '🌤️');
+    if(sch.zuhur) html += buildAbsensiCard(dateStr, 'Zuhur', sch.zuhur, '🕌');
+
+    container.innerHTML = html;
+    attachAbsensiHandlers(dateStr);
+  }
+
+  function buildAbsensiCard(dateStr, jenis, pembimbingUtama, icon){
+    var dayData = state.absensi[dateStr] || {};
+    var rec = dayData[jenis];
+    var editing = absensiEditing[jenis];
+
+    var cardClass = jenis==='Zuhur' ? 'schedule-card zuhur' : 'schedule-card';
+    var body;
+
+    if(rec && !editing){
+      body =
+        '<div class="saved-summary">'+
+          '<div class="kv"><span>Pembimbing Utama</span><span><strong>'+rec.pembimbingUtama+'</strong></span></div>'+
+          '<div class="kv"><span>Status</span><span>'+rec.status+'</span></div>'+
+          (rec.status==='Diwakili' ? '<div class="kv"><span>Perwakilan</span><span>'+(rec.perwakilan||'-')+'</span></div>' : '')+
+          '<div class="kv"><span>Catatan</span><span>'+(rec.catatan? rec.catatan : '-')+'</span></div>'+
+        '</div>'+
+        '<p class="muted" style="margin-top:8px;">Absensi untuk Sholat '+jenis+' pada tanggal ini sudah tersimpan.</p>'+
+        '<button class="btn btn-outline btn-sm" data-edit-jenis="'+jenis+'">✏️ Edit Absensi</button>';
+    } else {
+      var st = rec ? rec.status : '';
+      var perwakilanVal = rec ? rec.perwakilan : '';
+      var catatanVal = rec ? rec.catatan : '';
+      body =
+        '<div class="field"><label>Pembimbing Utama (sesuai jadwal)</label>'+
+          '<input type="text" value="'+pembimbingUtama+'" disabled></div>'+
+        '<div class="field"><label>Status</label>'+
+          '<div class="radio-group" data-status-group="'+jenis+'">'+
+            radioOpt(jenis,'Membimbing',st)+
+            radioOpt(jenis,'Tidak Membimbing',st)+
+            radioOpt(jenis,'Diwakili',st)+
+          '</div></div>'+
+        '<div class="field" data-perwakilan-field="'+jenis+'" style="display:'+(st==='Diwakili'?'block':'none')+';">'+
+          '<label>Pilih Guru Perwakilan</label>'+
+          '<select data-perwakilan-select="'+jenis+'">'+
+            '<option value="">-- Pilih Guru --</option>'+
+            state.guru.map(function(g){ return '<option value="'+g+'"'+(g===perwakilanVal?' selected':'')+'>'+g+'</option>'; }).join('')+
+          '</select></div>'+
+        '<div class="field"><label>Catatan (opsional)</label>'+
+          '<textarea data-catatan="'+jenis+'" placeholder="Contoh: Pembimbing utama berhalangan.">'+(catatanVal||'')+'</textarea></div>'+
+        '<button class="btn btn-sm" data-save-jenis="'+jenis+'">💾 Simpan Absensi</button>'+
+        (rec ? ' <button class="btn btn-outline btn-sm" data-cancel-jenis="'+jenis+'">Batal</button>' : '');
+    }
+
+    return '<div class="card '+cardClass+'">'+
+      '<h3>'+icon+' Sholat '+jenis+'</h3>'+
+      body+
+      '</div>';
+  }
+  function radioOpt(jenis, value, current){
+    var id = 'r_'+jenis+'_'+value.replace(/\s+/g,'');
+    return '<label class="radio-opt"><input type="radio" name="status_'+jenis+'" value="'+value+'" '+(current===value?'checked':'')+'> '+value+'</label>';
+  }
+
+  function attachAbsensiHandlers(dateStr){
+    var container = document.getElementById('absensiContent');
+
+    container.querySelectorAll('[data-status-group]').forEach(function(group){
+      group.addEventListener('change', function(e){
+        var jenis = group.getAttribute('data-status-group');
+        var val = e.target.value;
+        var field = container.querySelector('[data-perwakilan-field="'+jenis+'"]');
+        if(field) field.style.display = (val==='Diwakili') ? 'block' : 'none';
+      });
+    });
+
+    container.querySelectorAll('[data-edit-jenis]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        absensiEditing[btn.getAttribute('data-edit-jenis')] = true;
+        renderAbsensiContent();
+      });
+    });
+    container.querySelectorAll('[data-cancel-jenis]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        delete absensiEditing[btn.getAttribute('data-cancel-jenis')];
+        renderAbsensiContent();
+      });
+    });
+    container.querySelectorAll('[data-save-jenis]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var jenis = btn.getAttribute('data-save-jenis');
+        var card = btn.closest('.card');
+        var statusInput = card.querySelector('input[name="status_'+jenis+'"]:checked');
+        if(!statusInput){ alert('Silakan pilih status pembimbing terlebih dahulu.'); return; }
+        var status = statusInput.value;
+        var perwakilan = '';
+        if(status==='Diwakili'){
+          var sel = card.querySelector('[data-perwakilan-select="'+jenis+'"]');
+          perwakilan = sel ? sel.value : '';
+          if(!perwakilan){ alert('Silakan pilih guru perwakilan.'); return; }
+        }
+        var catatan = card.querySelector('[data-catatan="'+jenis+'"]').value.trim();
+        var sch = getScheduleForDateStr(dateStr);
+        var pembimbingUtama = jenis==='Duha' ? sch.duha : sch.zuhur;
+
+        if(!state.absensi[dateStr]) state.absensi[dateStr] = {};
+        state.absensi[dateStr][jenis] = {
+          pembimbingUtama: pembimbingUtama,
+          status: status,
+          perwakilan: status==='Diwakili' ? perwakilan : '',
+          catatan: catatan,
+          updatedAt: new Date().toISOString()
+        };
+        persistAbsensi();
+        delete absensiEditing[jenis];
+        renderAbsensiContent();
+      });
+    });
+  }
+
+  /* ================= JADWAL PEMBIMBING ================= */
+  function renderJadwalPage(){
+    var zBody = Object.keys(JADWAL_ZUHUR).map(function(h){
+      return '<tr><td>'+h+'</td><td>'+JADWAL_ZUHUR[h]+'</td></tr>';
+    }).join('');
+    var dBody = Object.keys(JADWAL_DUHA).map(function(h){
+      return '<tr><td>'+h+'</td><td>'+JADWAL_DUHA[h]+'</td></tr>';
+    }).join('');
+    document.getElementById('jadwalZuhurBody').innerHTML = zBody;
+    document.getElementById('jadwalDuhaBody').innerHTML = dBody;
+  }
+
+  /* ================= REKAP BULANAN ================= */
+  function initRekapSelectors(){
+    var bulanSel = document.getElementById('rekapBulan');
+    var tahunSel = document.getElementById('rekapTahun');
+    if(bulanSel.options.length===0){
+      BULAN_NAMES.forEach(function(b,i){
+        var o = document.createElement('option'); o.value=i+1; o.textContent=b; bulanSel.appendChild(o);
+      });
+    }
+    if(tahunSel.options.length===0){
+      var y = new Date().getFullYear();
+      for(var yy=y-2; yy<=y+2; yy++){
+        var o = document.createElement('option'); o.value=yy; o.textContent=yy; tahunSel.appendChild(o);
+      }
+    }
+    var now = new Date();
+    bulanSel.value = now.getMonth()+1;
+    tahunSel.value = now.getFullYear();
+  }
+
+  var currentRekapTab = 'harian';
+  document.querySelector('#page-rekap .tabs').addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-tab]');
+    if(!btn) return;
+    currentRekapTab = btn.getAttribute('data-tab');
+    document.querySelectorAll('#page-rekap .tabs button').forEach(function(b){ b.classList.toggle('active', b===btn); });
+    document.querySelectorAll('#page-rekap .subpage').forEach(function(sp){ sp.classList.toggle('active', sp.id==='tab-'+currentRekapTab); });
+    document.getElementById('rekapFilterWrap').style.display = (currentRekapTab==='perguru') ? 'none' : 'block';
+  });
+
+  ['rekapBulan','rekapTahun','rekapFilter'].forEach(function(id){
+    document.getElementById(id).addEventListener('change', renderRekapAll);
+  });
+  document.getElementById('honorRateInput').addEventListener('change', function(){
+    var v = parseInt(this.value,10);
+    if(isNaN(v) || v<0) v = 0;
+    state.honorRate = v;
+    persistHonor();
+    renderRekapHonor();
+  });
+
+  function getMonthRecords(){
+    var bulan = parseInt(document.getElementById('rekapBulan').value,10);
+    var tahun = parseInt(document.getElementById('rekapTahun').value,10);
+    var filter = document.getElementById('rekapFilter').value;
+    var prefix = tahun+'-'+pad2(bulan);
+    var rows = [];
+    Object.keys(state.absensi).sort().forEach(function(dateKey){
+      if(dateKey.indexOf(prefix)!==0) return;
+      ['Duha','Zuhur'].forEach(function(j){
+        if(filter!=='Semua' && filter!==j) return;
+        var rec = state.absensi[dateKey][j];
+        if(!rec) return;
+        rows.push({ tanggal: dateKey, hari: hariFromDateStr(dateKey), jenis: j, rec: rec });
+      });
+    });
+    return { rows: rows, bulan: bulan, tahun: tahun, filter: filter };
+  }
+
+  function renderRekapAll(){
+    if(document.getElementById('rekapBulan').options.length===0) initRekapSelectors();
+    renderRekapHarian();
+    renderRekapPerGuru();
+    renderRekapHonor();
+  }
+
+  function renderRekapHarian(){
+    var data = getMonthRecords();
+    var body = document.getElementById('rekapHarianBody');
+    var empty = document.getElementById('rekapHarianEmpty');
+    if(data.rows.length===0){
+      body.innerHTML=''; empty.style.display='block'; return;
+    }
+    empty.style.display='none';
+    body.innerHTML = data.rows.map(function(r){
+      return '<tr><td>'+formatTanggalIndo(r.tanggal)+'</td><td>'+r.hari+'</td><td>'+r.jenis+'</td>'+
+        '<td>'+r.rec.pembimbingUtama+'</td><td>'+r.rec.status+'</td>'+
+        '<td>'+(r.rec.perwakilan||'-')+'</td><td>'+(r.rec.catatan||'-')+'</td></tr>';
+    }).join('');
+  }
+
+  function renderRekapPerGuru(){
+    var data = getMonthRecords();
+    var bulan = data.bulan, tahun = data.tahun;
+    var prefix = tahun+'-'+pad2(bulan);
+    var names = state.guru.slice();
+    Object.keys(state.absensi).forEach(function(dateKey){
+      if(dateKey.indexOf(prefix)!==0) return;
+      ['Duha','Zuhur'].forEach(function(j){
+        var rec = state.absensi[dateKey][j];
+        if(rec && names.indexOf(rec.pembimbingUtama)===-1) names.push(rec.pembimbingUtama);
+      });
+    });
+    var counts = {};
+    names.forEach(function(n){ counts[n] = {jadwal:0, membimbing:0, diwakili:0, tidak:0}; });
+
+    Object.keys(state.absensi).forEach(function(dateKey){
+      if(dateKey.indexOf(prefix)!==0) return;
+      ['Duha','Zuhur'].forEach(function(j){
+        var rec = state.absensi[dateKey][j];
+        if(!rec) return;
+        var g = rec.pembimbingUtama;
+        if(!counts[g]) counts[g] = {jadwal:0, membimbing:0, diwakili:0, tidak:0};
+        counts[g].jadwal++;
+        if(rec.status==='Membimbing') counts[g].membimbing++;
+        else if(rec.status==='Diwakili') counts[g].diwakili++;
+        else if(rec.status==='Tidak Membimbing') counts[g].tidak++;
+      });
+    });
+
+    var body = document.getElementById('rekapGuruBody');
+    body.innerHTML = names.map(function(n){
+      var c = counts[n];
+      return '<tr><td>'+n+'</td><td>'+c.jadwal+'</td><td>'+c.membimbing+'</td><td>'+c.diwakili+'</td><td>'+c.tidak+'</td></tr>';
+    }).join('');
+  }
+
+  function computeHonorData(){
+    var data = getMonthRecords(); // sudah menghormati filter jenis
+    var sessions = {}; // nama guru -> jumlah sesi membimbing riil
+    state.guru.forEach(function(g){ sessions[g] = 0; });
+
+    data.rows.forEach(function(r){
+      var rec = r.rec;
+      if(rec.status==='Membimbing'){
+        var g = rec.pembimbingUtama;
+        sessions[g] = (sessions[g]||0) + 1;
+      } else if(rec.status==='Diwakili' && rec.perwakilan){
+        var g2 = rec.perwakilan;
+        sessions[g2] = (sessions[g2]||0) + 1;
+      }
+    });
+    return { sessions: sessions, bulan: data.bulan, tahun: data.tahun, filter: data.filter };
+  }
+
+  function renderRekapHonor(){
+    document.getElementById('honorRateInput').value = state.honorRate;
+    var h = computeHonorData();
+    var body = document.getElementById('rekapHonorBody');
+    var total = 0;
+    var names = Object.keys(h.sessions).sort(function(a,b){ return h.sessions[b]-h.sessions[a]; });
+    body.innerHTML = names.map(function(n){
+      var jumlah = h.sessions[n];
+      var subtotal = jumlah * state.honorRate;
+      total += subtotal;
+      return '<tr><td>'+n+'</td><td>'+jumlah+'</td><td>'+formatRupiah(state.honorRate)+'</td><td>'+formatRupiah(subtotal)+'</td></tr>';
+    }).join('');
+    document.getElementById('rekapHonorTotal').textContent = formatRupiah(total);
+  }
+
+  /* ---------- Export CSV ---------- */
+  function downloadFile(filename, content, mime){
+    var blob = new Blob([content], {type: mime});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  function toCsvValue(v){
+    v = (v===undefined||v===null) ? '' : String(v);
+    if(/[",\n;]/.test(v)) v = '"'+v.replace(/"/g,'""')+'"';
+    return v;
+  }
+
+  document.getElementById('btnCsvHarian').addEventListener('click', function(){
+    var data = getMonthRecords();
+    var lines = [['Tanggal','Hari','Sholat','Pembimbing Utama','Status','Perwakilan','Catatan'].map(toCsvValue).join(',')];
+    data.rows.forEach(function(r){
+      lines.push([formatTanggalIndo(r.tanggal), r.hari, r.jenis, r.rec.pembimbingUtama, r.rec.status, r.rec.perwakilan||'', r.rec.catatan||''].map(toCsvValue).join(','));
+    });
+    downloadFile('rekap-absensi-'+data.tahun+'-'+pad2(data.bulan)+'.csv', '\uFEFF'+lines.join('\r\n'), 'text/csv;charset=utf-8;');
+  });
+
+  document.getElementById('btnCsvHonor').addEventListener('click', function(){
+    var h = computeHonorData();
+    var lines = [['Guru','Jumlah Sesi Membimbing','Honor per Sesi','Total Honor'].map(toCsvValue).join(',')];
+    var total=0;
+    Object.keys(h.sessions).forEach(function(n){
+      var subtotal = h.sessions[n]*state.honorRate;
+      total += subtotal;
+      lines.push([n, h.sessions[n], state.honorRate, subtotal].map(toCsvValue).join(','));
+    });
+    lines.push(['TOTAL','','',total].map(toCsvValue).join(','));
+    downloadFile('rekap-honor-'+h.tahun+'-'+pad2(h.bulan)+'.csv', '\uFEFF'+lines.join('\r\n'), 'text/csv;charset=utf-8;');
+  });
+
+  /* ---------- Cetak / PDF (via print dialog) ---------- */
+  function doPrint(innerHtml){
+    var area = document.getElementById('printArea');
+    area.innerHTML = innerHtml;
+    window.print();
+  }
+
+  document.getElementById('btnCetakHarian').addEventListener('click', function(){
+    var data = getMonthRecords();
+    var rowsHtml = data.rows.map(function(r){
+      return '<tr><td>'+formatTanggalIndo(r.tanggal)+'</td><td>'+r.hari+'</td><td>'+r.jenis+'</td>'+
+        '<td>'+r.rec.pembimbingUtama+'</td><td>'+r.rec.status+'</td><td>'+(r.rec.perwakilan||'-')+'</td><td>'+(r.rec.catatan||'-')+'</td></tr>';
+    }).join('') || '<tr><td colspan="7" style="text-align:center;">Tidak ada data</td></tr>';
+    var judul = data.filter==='Semua' ? 'REKAP ABSENSI PEMBIMBING SHOLAT SISWA' : 'REKAP ABSENSI PEMBIMBING SHOLAT '+data.filter.toUpperCase();
+    var html =
+      '<div class="letterhead"><h2>MI DAARUSSALAAM</h2><p>'+judul+'</p>'+
+      '<p>Bulan: '+BULAN_NAMES[data.bulan-1]+' &nbsp; Tahun: '+data.tahun+'</p></div>'+
+      '<table><thead><tr><th>Tanggal</th><th>Hari</th><th>Sholat</th><th>Pembimbing Utama</th><th>Status</th><th>Perwakilan</th><th>Catatan</th></tr></thead>'+
+      '<tbody>'+rowsHtml+'</tbody></table>'+
+      signRow();
+    doPrint(html);
+  });
+
+  document.getElementById('btnCetakHonor').addEventListener('click', function(){
+    var h = computeHonorData();
+    var total = 0;
+    var rowsHtml = Object.keys(h.sessions).sort(function(a,b){return h.sessions[b]-h.sessions[a];}).map(function(n,i){
+      var subtotal = h.sessions[n]*state.honorRate;
+      total += subtotal;
+      return '<tr><td>'+(i+1)+'</td><td>'+n+'</td><td style="text-align:center;">'+h.sessions[n]+'</td><td style="text-align:right;">'+formatRupiah(subtotal)+'</td></tr>';
+    }).join('');
+    var html =
+      '<div class="letterhead"><h2>MI DAARUSSALAAM</h2><p>REKAP HONOR PEMBIMBING SHOLAT SISWA</p>'+
+      '<p>Bulan: '+BULAN_NAMES[h.bulan-1]+' &nbsp; Tahun: '+h.tahun+' &nbsp; | &nbsp; Jenis: '+h.filter+'</p>'+
+      '<p>Honor per sesi bimbingan: '+formatRupiah(state.honorRate)+'</p></div>'+
+      '<table><thead><tr><th>No</th><th>Nama Guru</th><th>Jumlah Sesi</th><th>Total Honor</th></tr></thead>'+
+      '<tbody>'+rowsHtml+'</tbody>'+
+      '<tfoot><tr><td colspan="3">Total Keseluruhan</td><td style="text-align:right;">'+formatRupiah(total)+'</td></tr></tfoot></table>'+
+      signRow(true);
+    doPrint(html);
+  });
+
+  function signRow(withBendahara){
+    return '<div class="sign-row">'+
+      '<div class="sign-block">Mengetahui,<br>Kepala Madrasah<div class="line">(..............................)</div></div>'+
+      '<div class="sign-block">'+(withBendahara?'Bendahara':'Dibuat oleh,')+'<br>&nbsp;<div class="line">(..............................)</div></div>'+
+      '</div>';
+  }
+
+  /* ================= DATA GURU ================= */
+  function renderGuruPage(){
+    var wrap = document.getElementById('guruList');
+    wrap.innerHTML = state.guru.map(function(g,i){
+      return '<span class="guru-chip">'+g+' <button data-hapus-guru="'+i+'" title="Hapus">&times;</button></span>';
+    }).join('');
+    wrap.querySelectorAll('[data-hapus-guru]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var idx = parseInt(btn.getAttribute('data-hapus-guru'),10);
+        var nama = state.guru[idx];
+        if(confirm('Hapus '+nama+' dari daftar guru aktif?\n\n(Data absensi lama yang sudah memakai nama ini tidak akan terhapus.)')){
+          state.guru.splice(idx,1);
+          persistGuru();
+          renderGuruPage();
+        }
+      });
+    });
+  }
+  document.getElementById('btnTambahGuru').addEventListener('click', function(){
+    var input = document.getElementById('guruBaruInput');
+    var nama = input.value.trim();
+    if(!nama){ return; }
+    if(state.guru.indexOf(nama)!==-1){ alert('Nama guru sudah ada dalam daftar.'); return; }
+    state.guru.push(nama);
+    persistGuru();
+    input.value='';
+    renderGuruPage();
+  });
+
+  /* ================= BACKUP & RESTORE ================= */
+  document.getElementById('btnBackup').addEventListener('click', function(){
+    var payload = {
+      exportedAt: new Date().toISOString(),
+      guru: state.guru,
+      absensi: state.absensi,
+      honorRate: state.honorRate
+    };
+    downloadFile('backup-absensi-sholat-'+todayStr()+'.json', JSON.stringify(payload,null,2), 'application/json');
+  });
+  document.getElementById('btnRestore').addEventListener('click', function(){
+    var fileInput = document.getElementById('restoreFile');
+    var file = fileInput.files[0];
+    if(!file){ alert('Silakan pilih file backup (.json) terlebih dahulu.'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        var payload = JSON.parse(e.target.result);
+        if(!confirm('Data saat ini akan digantikan oleh data dari file backup. Lanjutkan?')) return;
+        state.guru = Array.isArray(payload.guru) ? payload.guru : DEFAULT_GURU.slice();
+        state.absensi = (payload.absensi && typeof payload.absensi==='object') ? payload.absensi : {};
+        state.honorRate = (typeof payload.honorRate==='number') ? payload.honorRate : DEFAULT_HONOR_RATE;
+        persistGuru(); persistAbsensi(); persistHonor();
+        alert('Data berhasil dipulihkan.');
+        showPage('dashboard');
+      }catch(err){
+        alert('File backup tidak valid.');
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  /* ================= INIT ================= */
+  renderHeaderToday();
+  initRekapSelectors();
+  showPage('dashboard');
+
+})();
+</script>
+</body>
+</html>
