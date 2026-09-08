@@ -379,9 +379,25 @@
 
 <div id="printArea"></div>
 
-<script>
-(function(){
-  "use strict";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  // 1. Konfigurasi Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyDJ2E83bThk9CFeEm3eJgLc3MANSMRqEXM",
+    authDomain: "absensi-pembimbing-shalat.firebaseapp.com",
+    databaseURL: "https://absensi-pembimbing-shalat-default-rtdb.firebaseio.com",
+    projectId: "absensi-pembimbing-shalat",
+    storageBucket: "absensi-pembimbing-shalat.firebasestorage.app",
+    messagingSenderId: "416647647133",
+    appId: "1:416647647133:web:170d6d50bef2008163e974",
+    measurementId: "G-HNCYG635E4"
+  };
+
+  // 2. Inisialisasi Firebase & Database
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
   /* ================= KONSTANTA ================= */
   var HARI_NAMES = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -393,33 +409,44 @@
   var DEFAULT_GURU = ['Pak Ence','Pak Iwan','Pak Ujang','Pak Deden','Pak Udan','Pak Ce','Pak Sobandi'];
   var DEFAULT_HONOR_RATE = 10000;
 
-  var LS_KEY = {
-    guru: 'apsholat_guru_v1',
-    absensi: 'apsholat_absensi_v1',
-    honor: 'apsholat_honorRate_v1'
-  };
-
-  /* ================= STORAGE HELPERS ================= */
-  function loadJSON(key, fallback){
-    try{
-      var raw = localStorage.getItem(key);
-      if(!raw) return fallback;
-      return JSON.parse(raw);
-    }catch(e){ return fallback; }
-  }
-  function saveJSON(key, val){
-    localStorage.setItem(key, JSON.stringify(val));
-  }
-
   var state = {
-    guru: loadJSON(LS_KEY.guru, DEFAULT_GURU.slice()),
-    absensi: loadJSON(LS_KEY.absensi, {}), // { 'YYYY-MM-DD': { Duha:{...}, Zuhur:{...} } }
-    honorRate: loadJSON(LS_KEY.honor, DEFAULT_HONOR_RATE)
+    guru: DEFAULT_GURU.slice(),
+    absensi: {}, 
+    honorRate: DEFAULT_HONOR_RATE
   };
 
-  function persistGuru(){ saveJSON(LS_KEY.guru, state.guru); }
-  function persistAbsensi(){ saveJSON(LS_KEY.absensi, state.absensi); }
-  function persistHonor(){ saveJSON(LS_KEY.honor, state.honorRate); }
+  // 3. Fungsi Simpan ke Firebase Realtime Database
+  function persistGuru(){ 
+    set(ref(db, 'guru'), state.guru); 
+  }
+  function persistAbsensi(){ 
+    set(ref(db, 'absensi'), state.absensi); 
+  }
+  function persistHonor(){ 
+    set(ref(db, 'honorRate'), state.honorRate); 
+  }
+
+  // 4. Sinkronisasi Data Realtime dari Firebase
+  onValue(ref(db, 'guru'), (snapshot) => {
+    if (snapshot.exists()) {
+      state.guru = snapshot.val();
+      renderGuruPage();
+    } else {
+      persistGuru();
+    }
+  });
+
+  onValue(ref(db, 'absensi'), (snapshot) => {
+    state.absensi = snapshot.exists() ? snapshot.val() : {};
+    renderDashboard();
+    renderAbsensiContent();
+    renderRekapAll();
+  });
+
+  onValue(ref(db, 'honorRate'), (snapshot) => {
+    state.honorRate = snapshot.exists() ? snapshot.val() : DEFAULT_HONOR_RATE;
+    renderRekapHonor();
+  });
 
   /* ================= UTIL TANGGAL ================= */
   function pad2(n){ return String(n).padStart(2,'0'); }
@@ -501,7 +528,6 @@
     }
     document.getElementById('dashScheduleCard').innerHTML = html;
 
-    // statistik bulan berjalan
     var now = new Date();
     var prefix = now.getFullYear()+'-'+pad2(now.getMonth()+1);
     var total=0, membimbing=0, diwakili=0, tidak=0;
@@ -535,7 +561,7 @@
   }
 
   /* ================= ABSENSI HARI INI ================= */
-  var absensiEditing = {}; // { 'Duha': true } untuk tanggal yang sedang dilihat
+  var absensiEditing = {};
 
   function renderAbsensiPage(){
     var input = document.getElementById('absensiTanggal');
@@ -549,7 +575,9 @@
   });
 
   function renderAbsensiContent(){
-    var dateStr = document.getElementById('absensiTanggal').value || todayStr();
+    var inputEl = document.getElementById('absensiTanggal');
+    if(!inputEl) return;
+    var dateStr = inputEl.value || todayStr();
     var sch = getScheduleForDateStr(dateStr);
     var container = document.getElementById('absensiContent');
 
@@ -607,7 +635,7 @@
           '</select></div>'+
         '<div class="field"><label>Catatan (opsional)</label>'+
           '<textarea data-catatan="'+jenis+'" placeholder="Contoh: Pembimbing utama berhalangan.">'+(catatanVal||'')+'</textarea></div>'+
-        '<button class="btn btn-sm" data-save-jenis="'+jenis+'">💾 Simpan Absensi</button>'+
+        '<button class="btn btn-sm" data-save-jenis="'+jenis+'">💾 Simpan ke Firebase</button>'+
         (rec ? ' <button class="btn btn-outline btn-sm" data-cancel-jenis="'+jenis+'">Batal</button>' : '');
     }
 
@@ -617,7 +645,6 @@
       '</div>';
   }
   function radioOpt(jenis, value, current){
-    var id = 'r_'+jenis+'_'+value.replace(/\s+/g,'');
     return '<label class="radio-opt"><input type="radio" name="status_'+jenis+'" value="'+value+'" '+(current===value?'checked':'')+'> '+value+'</label>';
   }
 
@@ -670,9 +697,10 @@
           catatan: catatan,
           updatedAt: new Date().toISOString()
         };
+
         persistAbsensi();
         delete absensiEditing[jenis];
-        renderAbsensiContent();
+        alert('Data absensi berhasil disimpan ke Firebase!');
       });
     });
   }
@@ -727,7 +755,6 @@
     if(isNaN(v) || v<0) v = 0;
     state.honorRate = v;
     persistHonor();
-    renderRekapHonor();
   });
 
   function getMonthRecords(){
@@ -807,8 +834,8 @@
   }
 
   function computeHonorData(){
-    var data = getMonthRecords(); // sudah menghormati filter jenis
-    var sessions = {}; // nama guru -> jumlah sesi membimbing riil
+    var data = getMonthRecords();
+    var sessions = {};
     state.guru.forEach(function(g){ sessions[g] = 0; });
 
     data.rows.forEach(function(r){
@@ -839,7 +866,7 @@
     document.getElementById('rekapHonorTotal').textContent = formatRupiah(total);
   }
 
-  /* ---------- Export CSV ---------- */
+  /* ---------- Export CSV & Print ---------- */
   function downloadFile(filename, content, mime){
     var blob = new Blob([content], {type: mime});
     var url = URL.createObjectURL(blob);
@@ -876,7 +903,6 @@
     downloadFile('rekap-honor-'+h.tahun+'-'+pad2(h.bulan)+'.csv', '\uFEFF'+lines.join('\r\n'), 'text/csv;charset=utf-8;');
   });
 
-  /* ---------- Cetak / PDF (via print dialog) ---------- */
   function doPrint(innerHtml){
     var area = document.getElementById('printArea');
     area.innerHTML = innerHtml;
@@ -928,6 +954,7 @@
   /* ================= DATA GURU ================= */
   function renderGuruPage(){
     var wrap = document.getElementById('guruList');
+    if(!wrap) return;
     wrap.innerHTML = state.guru.map(function(g,i){
       return '<span class="guru-chip">'+g+' <button data-hapus-guru="'+i+'" title="Hapus">&times;</button></span>';
     }).join('');
@@ -938,7 +965,6 @@
         if(confirm('Hapus '+nama+' dari daftar guru aktif?\n\n(Data absensi lama yang sudah memakai nama ini tidak akan terhapus.)')){
           state.guru.splice(idx,1);
           persistGuru();
-          renderGuruPage();
         }
       });
     });
@@ -951,7 +977,6 @@
     state.guru.push(nama);
     persistGuru();
     input.value='';
-    renderGuruPage();
   });
 
   /* ================= BACKUP & RESTORE ================= */
@@ -972,12 +997,12 @@
     reader.onload = function(e){
       try{
         var payload = JSON.parse(e.target.result);
-        if(!confirm('Data saat ini akan digantikan oleh data dari file backup. Lanjutkan?')) return;
+        if(!confirm('Data saat ini di Firebase akan digantikan oleh data dari file backup. Lanjutkan?')) return;
         state.guru = Array.isArray(payload.guru) ? payload.guru : DEFAULT_GURU.slice();
         state.absensi = (payload.absensi && typeof payload.absensi==='object') ? payload.absensi : {};
         state.honorRate = (typeof payload.honorRate==='number') ? payload.honorRate : DEFAULT_HONOR_RATE;
         persistGuru(); persistAbsensi(); persistHonor();
-        alert('Data berhasil dipulihkan.');
+        alert('Data berhasil dipulihkan ke Firebase.');
         showPage('dashboard');
       }catch(err){
         alert('File backup tidak valid.');
@@ -990,8 +1015,6 @@
   renderHeaderToday();
   initRekapSelectors();
   showPage('dashboard');
-
-})();
 </script>
 </body>
 </html>
